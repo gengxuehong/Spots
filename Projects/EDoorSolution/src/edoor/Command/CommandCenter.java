@@ -4,15 +4,10 @@
  */
 package edoor.Command;
 
-import java.lang.annotation.*;
 import java.util.*;
 import java.util.jar.*;
 import java.io.*;
-import java.lang.String;
 import java.lang.reflect.*;
-import java.net.URLClassLoader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Command center is a center of commands
@@ -43,8 +38,14 @@ public class CommandCenter
             // List all available commands
             _console.print("Total %d commands. Type \"help [cmdName]\" for more help on command.\n", _Commands.isEmpty() ? 0 : _Commands.size());
             Enumeration<String> keys = _Commands.keys();
+            LinkedList<String> lst = new LinkedList<String>();
             while(keys.hasMoreElements()) {
                 String key = keys.nextElement();
+                lst.add(key);
+            }
+            String[] ary = lst.toArray(new String[0]);
+            Arrays.sort(ary);
+            for(String key : ary) {
                 _console.print("%s\n", key);
             }
         } else {
@@ -157,6 +158,9 @@ public class CommandCenter
         // To register a class, we need a instance
         if(!cls.isAnnotationPresent(CommandBase.class))
             return; 
+        CommandBase annoCmdBase = (CommandBase)cls.getAnnotation(CommandBase.class);
+        if(!annoCmdBase.AutoRegister())
+            return; // Don't register this class automatically
         
         if(_console != null) {
             _console.print("Register commands in %s\n", cls.getName());

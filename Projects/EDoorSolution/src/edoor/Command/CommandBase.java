@@ -13,5 +13,5 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CommandBase {
-    
+    public boolean AutoRegister() default true;
 }

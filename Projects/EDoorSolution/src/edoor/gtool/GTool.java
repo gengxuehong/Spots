@@ -1,37 +1,42 @@
 package edoor.gtool;
 
 import edoor.Command.*;
-import edoor.Utils.FileSys.*;
-import java.io.IOException;
 import java.net.URL;
-import java.util.*;
-import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import edoor.Data.*;
 
 public class GTool {
         private static CommandCenter _CmdCenter = new CommandCenter();
         private static GToolConsole _console = new GToolConsole();
+        private static DataCenter _dataCenter = null;
         
 	public static void main(String[] args){
                 _CmdCenter.setConsole(_console);
                 
+                // Initialize data center
+                if(!InitDataCenter())
+                    return;
+                
+                // Register all commands
 		if(!RegisterCommands())
                     return;
                 
-		if(args.length > 0) {
-                    StringBuilder strBuilder = new StringBuilder();
-                    for(String item : args) {
-                        strBuilder.append(item);
-                        strBuilder.append(" ");
-                    }
-                    DoCmd(strBuilder.toString());
-		} else {
-                    // Enter interaction mode
-                    CmdLoop();
-                }
+                // Enter interaction mode
+                CmdLoop();
 	}
 	
+        private static boolean InitDataCenter() {
+            try {
+                _dataCenter = new DataCenter("edoor.Data.JDBC.JDBCDataSource");
+            } catch (DataException ex) {
+                System.out.printf("Initialize Data Center failed!\nError:\n%s", ex.getMessage());
+                ex.printStackTrace();
+                return false;
+            }
+            return true;
+        }
+        
         private static boolean RegisterCommands() {
             try {
                 String strRoot = "";
@@ -48,6 +53,10 @@ public class GTool {
                 } else {
                     _CmdCenter.RegisterDir(strRoot, "");
                 }
+                
+                // For data center, we should register it now
+                _CmdCenter.RegisterObject(_dataCenter);
+                
             } catch(Throwable err) {
                 System.out.printf("Register commands failed!\n Error:\n%s\n", err.getMessage());
                 Logger.getLogger(GTool.class.getName()).log(Level.SEVERE, null, err);

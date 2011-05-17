@@ -6,6 +6,7 @@ package edoor.Command;
 
 import java.lang.reflect.Method;
 import java.util.Scanner;
+import org.omg.CORBA.IntHolder;
 
 /**
  * Class that used to convert Command execution to method calling
@@ -104,7 +105,7 @@ public class CommandAgent
         Class<?>[] paramTypes = _method.getParameterTypes();
         Object[] params = new Object[paramTypes.length];
         Scanner s = new Scanner(cmdLine);
-        Integer idx = 0;
+        IntHolder idx = new IntHolder(0);
         int iValid = 0;
         for(int i=0; i<paramTypes.length; i++) {
             // Find out next parameter
@@ -178,9 +179,9 @@ public class CommandAgent
      * @param iPos Position where search start at. End of parameter when returned.
      * @return Found parameter string
      */
-    public static String findNextParameter(String cmdLine, Integer iPos) {
+    public static String findNextParameter(String cmdLine, IntHolder iPos) {
         // Jump to next non space char
-        int i = iPos;
+        int i = iPos.value;
         while(i < cmdLine.length() && isSpaceChar(cmdLine.charAt(i)))
             i++;
         int iBegin = i;
@@ -227,7 +228,7 @@ public class CommandAgent
             }
             i++;
         }
-        iPos = i;
+        iPos.value = i;
         return buf.toString();
     }
     
