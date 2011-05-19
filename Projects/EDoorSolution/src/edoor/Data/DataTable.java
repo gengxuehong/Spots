@@ -31,12 +31,28 @@ public class DataTable {
             DataField annoField = (DataField)field.getAnnotation(DataField.class);
             if(annoField == null) continue;
             String fieldName = annoField.FieldName();
-            Class<?> type = field.getClass();
+            Class<?> type = field.getType();
             int maxlen = annoField.MaxLength();
-            table.NewColumn(fieldName, type, maxlen);
+            DataColumn col = table.NewColumn(fieldName, type, maxlen);
+            if(annoField.isPrimaryKey())
+                col.setPrimaryKey(annoField.Key());
+            else if(annoField.isIndexed())
+                col.setIndexed(annoField.Key());
         }
         
         return table;
+    }
+    
+    /**
+     * Describe data structure of this table into a string builder
+     * @param out String builder
+     */
+    public void Describe(StringBuilder out) {
+        out.append(getName());
+        out.append("\n");
+        for(DataColumn col : getColumns()) {
+            col.Describe(out);
+        }
     }
     
     public DataTable() {

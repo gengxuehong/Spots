@@ -8,6 +8,11 @@ public class DataColumn {
     private String _name = "";
     private Class<?> _type = null;
     private int _maxlen = -1;
+    private boolean _isPrimaryKey = false;
+    private boolean _isIndexed = false;
+    private String _key = "";
+    private String _outKey = "";
+    private String _outTable="";
     private DataTable _table = null;
     
     /**
@@ -27,6 +32,23 @@ public class DataColumn {
         _name = name;
         _type = type;
         _maxlen = maxlen;
+    }
+    
+    /**
+     * Describe column info to a string builder
+     * @param out String builder
+     */
+    public void Describe(StringBuilder out) {
+        String str = String.format("%s\t %s (%d)", _name, _type.getName(), _maxlen);
+        out.append(str);
+        if(_isPrimaryKey) {
+            str = String.format("\tPK(%s)", _key);
+            out.append(str);
+        } else if(_isIndexed) {
+            str = String.format("\tIdx(%s)", _key);
+            out.append(str);
+        }
+        out.append("\n");
     }
     
     public void setName(String name) {
@@ -52,4 +74,45 @@ public class DataColumn {
     public int getMaxLen() {
         return _maxlen;
     }
+    
+    public void setPrimaryKey(String key) {
+        _isPrimaryKey = true;
+        _isIndexed = true;
+        _key = key;
+    }
+    public void removeFromPrimaryKey() {
+        _isPrimaryKey = false;
+        _isIndexed = false;
+        _key = "";
+    }
+    public boolean isPrimaryKey() {
+        return _isPrimaryKey;
+    }
+    
+    public void setIndexed(String key) {
+        _isIndexed = true;
+        _key = key;
+    }
+    public void removeFromIndex() {
+        _isIndexed = false;
+        _key = "";
+    }
+    public boolean isIndexed() { 
+        return _isIndexed;
+    }
+    
+    public void setOutKey(String outTable, String outKey) {
+        _outTable = outTable;
+        _outKey = outKey;
+    }
+    public boolean isOutKey() {
+        return !_outKey.isEmpty();
+    }
+    public String getOutTable() {
+        return _outTable;
+    }
+    public String getOutKey() {
+        return _outKey;
+    }
+    
 }
