@@ -1,6 +1,6 @@
 package edoor.Data;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.util.*;
 
 /**
@@ -13,6 +13,33 @@ public class DataTable {
     private LinkedHashMap<String, DataColumn> _columns = new LinkedHashMap<String, DataColumn>();
     private LinkedList<DataRow> _rows = new LinkedList<DataRow>();
     
+    private static void AddColumnToTable(DataTable table, DataField annoField, Class<?> type) throws DataException {
+        String fieldName = annoField.FieldName();
+        int maxlen = annoField.MaxLength();
+        DataColumn col = null;
+        if(table.hasColumn(annoField.FieldName())) {
+            // Column already exist, update its properties
+            col = table.getColumn(annoField.FieldName());
+            if(maxlen > col.getMaxLen()) col.setMaxLen(maxlen);
+            if(!col.getType().equals(type)) throw new DataException("DataField types in annotations are not consistent!");
+        } else {
+            // Column not exist, create new one
+            col = table.NewColumn(fieldName, type, maxlen);
+        }
+        String oldKey = col.getKey();
+        if(annoField.isPrimaryKey()) {
+            if(oldKey != null && !oldKey.isEmpty() && 0 != oldKey.compareToIgnoreCase(annoField.Key()))
+                throw new DataException("Primary key name in annotations are not consistent!");
+            else
+                col.setPrimaryKey(annoField.Key());
+        }
+        else if(annoField.isIndexed()) {
+            if(oldKey != null && !oldKey.isEmpty() && 0 != oldKey.compareToIgnoreCase(annoField.Key()))
+                throw new DataException("Index key name in annotations are not consistent!");
+            else
+                col.setIndexed(annoField.Key());            
+        }
+   }
     /**
      * Generate DataTable from a Class
      * @param cls Class used to create data table
@@ -26,20 +53,33 @@ public class DataTable {
         String tableName = annoRecord.TableName();
         
         DataTable table = new DataTable(tableName);
+        
+        // Lookup fields from class fields
         Field[] fields = cls.getFields();
         for(Field field : fields) {
             DataField annoField = (DataField)field.getAnnotation(DataField.class);
             if(annoField == null) continue;
-            String fieldName = annoField.FieldName();
-            Class<?> type = field.getType();
-            int maxlen = annoField.MaxLength();
-            DataColumn col = table.NewColumn(fieldName, type, maxlen);
-            if(annoField.isPrimaryKey())
-                col.setPrimaryKey(annoField.Key());
-            else if(annoField.isIndexed())
-                col.setIndexed(annoField.Key());
+            AddColumnToTable(table, annoField, field.getType());
         }
         
+        // Lookup fields from methods
+        for(Method method : cls.getMethods()) {
+            DataField annoField = (DataField)method.getAnnotation(DataField.class);
+            if(annoField == null) continue;
+            Class<?>[] paramTypes = method.getParameterTypes();
+            Class<?> type = null;
+            if(method.getReturnType().equals(void.class) && paramTypes.length == 1) {
+                // This must be a set method
+                type = paramTypes[0];
+            } else if(!method.getReturnType().equals(void.class) && paramTypes.length == 0) {
+                // This is a get method
+                type = method.getReturnType();
+            } else {
+                String msg = String.format("Method %s could not be treated as DataField!", method.getName());
+                throw new DataException(msg);
+            }
+            AddColumnToTable(table, annoField, type);
+        }
         return table;
     }
     
@@ -79,6 +119,15 @@ public class DataTable {
     }
     
     /**
+     * Check if a column is contained in the table
+     * @param name Name of column
+     * @return true if column exists
+     */
+    public boolean hasColumn(String name) {
+        return _columns.containsKey(name);
+    }
+    
+    /**
      * Create a new column in table
      * @param name Name of new column
      * @param type Data type of new column
@@ -97,6 +146,18 @@ public class DataTable {
         return col;
     }
     
+    /**
+     * Get specific column
+     * @param name Column name
+     * @return Column object
+     */
+    public DataColumn getColumn(String name) throws DataException {
+        if(_columns.containsKey(name)) {
+            return _columns.get(name);
+        } else {
+            throw new DataException("Column not exist!");
+        }
+    }
     /**
      * Remove column from table
      * @param name Name of column to be removed

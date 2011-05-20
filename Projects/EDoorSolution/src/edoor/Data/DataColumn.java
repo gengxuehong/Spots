@@ -101,6 +101,10 @@ public class DataColumn {
         return _isIndexed;
     }
     
+    public String getKey() {
+        return _key;
+    }
+    
     public void setOutKey(String outTable, String outKey) {
         _outTable = outTable;
         _outKey = outKey;
