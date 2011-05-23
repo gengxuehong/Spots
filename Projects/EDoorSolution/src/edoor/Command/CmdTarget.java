@@ -11,6 +11,7 @@ package edoor.Command;
 public class CmdTarget implements ICommandBase {
     
     protected IConsole _console = null;
+    protected ICommandCenter _cmdCenter = null;
     
     /**
      * Set console for this command target
@@ -19,5 +20,14 @@ public class CmdTarget implements ICommandBase {
     @Override
     public void setConsole(IConsole console) {
         _console = console;
+    }
+
+    /**
+     * Set command center
+     * @param center Interface of command center
+     */
+    @Override
+    public void setCommandCenter(ICommandCenter center) {
+        _cmdCenter = center;
     }
 }

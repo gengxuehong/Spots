@@ -14,4 +14,10 @@ public interface ICommandBase {
      * @param console IConsole interface that representing a console
      */
     void setConsole(IConsole console);
+    
+    /**
+     * Set command center to command base, so it can communicate with command center
+     * @param center Interface of command center
+     */
+    void setCommandCenter(ICommandCenter center);
 }

@@ -15,10 +15,11 @@ import java.lang.reflect.*;
  */
 @CommandBase
 public class CommandCenter 
-    implements ICommandBase
+    extends CmdTarget
+    implements ICommandCenter
 {
     private static Hashtable<String, ICommand> _Commands = new Hashtable<String, ICommand>();
-    private IConsole _console = null;
+    private ICommandCenter _hook = null;
     
     public CommandCenter() {
     }
@@ -29,14 +30,27 @@ public class CommandCenter
     }
     
     /**
-     * Output help text of command center to console
-     * @param cmd Name of command whose help text will be outputed; Empty if list all commands.
+     * Return prompt string that displayed at each command line
+     * @return 
      */
-    @CommandEntry(Token = "help", Syntax = "help | help %command%")
-    public void Help(String cmd) {
+    @Override
+    public String getPrompt() {
+        if(_hook == null)
+            return ">";
+        else
+            return _hook.getPrompt();
+    }
+    
+    /**
+     * Show help to console
+     * @param cmd Command to be helped.
+     * @param console Console the help text outputted to.
+     */
+    @Override
+    public void showHelp(String cmd, IConsole console) {
         if(cmd == null || cmd.isEmpty()) {
             // List all available commands
-            _console.print("Total %d commands. Type \"help [cmdName]\" for more help on command.\n", _Commands.isEmpty() ? 0 : _Commands.size());
+            console.print("Total %d commands. Type \"help [cmdName]\" for more help on command.\n", _Commands.isEmpty() ? 0 : _Commands.size());
             Enumeration<String> keys = _Commands.keys();
             LinkedList<String> lst = new LinkedList<String>();
             while(keys.hasMoreElements()) {
@@ -46,20 +60,29 @@ public class CommandCenter
             String[] ary = lst.toArray(new String[0]);
             Arrays.sort(ary);
             for(String key : ary) {
-                _console.print("%s\n", key);
+                console.print("%s\n", key);
             }
         } else {
             // List syntax help for specific command
             if(_Commands.containsKey(cmd)) {
                 ICommand cmdObj = _Commands.get(cmd);
                 try {
-                    _console.print("%s\n", cmdObj.getHelp());
+                    console.print("%s\n", cmdObj.getHelp());
                 } catch (CommandException ex) {
                     //Logger.getLogger(CommandCenter.class.getName()).log(Level.SEVERE, null, ex);
-                    _console.print("Cannot get help! Cause:\n%s", ex.getMessage());
+                    console.print("Cannot get help! Cause:\n%s", ex.getMessage());
                 }
             }
         }
+    }
+    
+    /**
+     * Output help text of command center to console
+     * @param cmd Name of command whose help text will be outputed; Empty if list all commands.
+     */
+    @CommandEntry(Token = "help", Syntax = "help | help %command%")
+    public void Help(String cmd) {
+        showHelp(cmd, _console);
     }
     
     /**
@@ -178,6 +201,7 @@ public class CommandCenter
         Class<?> cls = obj.getClass();
         ICommandBase cmdBase = (ICommandBase)obj;
         cmdBase.setConsole(_console);
+        cmdBase.setCommandCenter((ICommandCenter)this);
         Method[] methods = cls.getDeclaredMethods();
         for(Method m : methods) {
             CommandEntry anoMethod = m.getAnnotation(CommandEntry.class);
@@ -228,27 +252,43 @@ public class CommandCenter
      * Remove all command agents from command center
      */
     public void UnregisterAll() {
-        _Commands.clear();;
+        _Commands.clear();
     }
 
     /**
      * Run command with command line
      * @param cmd 
      */
+    @Override
     public void doCommand(String cmd) throws CommandException {
-        Scanner s = new Scanner(cmd);
-        if(!s.hasNext("\\w+")) {
-            throw new CommandException("No command! Invalid command line!");
+        if(_hook == null) {
+            Scanner s = new Scanner(cmd);
+            if(!s.hasNext("\\w+")) {
+                throw new CommandException("No command! Invalid command line!");
+            }
+            String token = s.next("\\w+");
+            // Search command object
+            if(!_Commands.containsKey(token)) {
+                String msg = String.format("Unknown command :\"%s\"!",token);
+                throw new CommandException(msg);
+            }
+            ICommand command = _Commands.get(token);
+            String params = cmd.substring(token.length()).trim();
+            command.Run(params, _console);
+        } else { 
+            // Bound
+            _hook.doCommand(cmd);
         }
-        String token = s.next("\\w+");
-        // Search command object
-        if(!_Commands.containsKey(token)) {
-            String msg = String.format("Unknown command :\"%s\"!",token);
-            throw new CommandException(msg);
-        }
-        ICommand command = _Commands.get(token);
-        String params = cmd.substring(token.length()).trim();
-        command.Run(params, _console);
     }
-    
+
+    @Override
+    public void installHook(ICommandCenter hook) {
+        _hook = hook;
+    }
+
+    @Override
+    public void uninstallHook() throws CommandException {
+        _hook = null;
+    }
+
 }

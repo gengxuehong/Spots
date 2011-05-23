@@ -67,7 +67,7 @@ public class GTool {
         
         public static void CmdLoop() {
             while(true) {
-               System.out.print(">");
+               System.out.print(_CmdCenter.getPrompt());
                java.util.Scanner s = new java.util.Scanner(System.in);
                String strLine = s.nextLine();
                if(strLine.equalsIgnoreCase("exit")) {
