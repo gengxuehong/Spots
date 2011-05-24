@@ -1,7 +1,6 @@
 package edoor.Data;
 
 import java.math.*;
-import java.util.Date;
 import org.apache.derby.client.am.Types;
 
 /**
@@ -21,6 +20,74 @@ public class DataColumn {
     private String _outKey = "";
     private String _outTable="";
     private DataTable _table = null;
+    
+    /**
+     * Tool to convert SQL type to java runtime class
+     * @param sqlType SQL type
+     * @return Cooresponding java class
+     * @throws DataException 
+     */
+    public static Class<?> SQLTypeToClass(int sqlType) throws DataException {
+        switch(sqlType) {
+            case Types.BOOLEAN:         return boolean.class;
+            case Types.SMALLINT:        return short.class;
+            case Types.INTEGER:         return int.class;
+            case Types.BIGINT:          return long.class;
+            case Types.REAL:            return float.class;
+            case Types.DOUBLE:          return double.class;
+            case Types.DECIMAL:         return BigDecimal.class;
+            case Types.CHAR:            return String.class;
+            case Types.VARCHAR:         return String.class;
+            case Types.LONGVARCHAR:     return String.class;
+            case Types.DATE:            return java.sql.Date.class;
+            case Types.TIME:            return java.sql.Time.class;
+            case Types.TIMESTAMP:       return java.sql.Timestamp.class;
+            case Types.BINARY:          return java.sql.Blob.class;
+            case Types.VARBINARY:       return java.sql.Blob.class;
+            case Types.LONGVARBINARY:   return java.sql.Blob.class;
+            case Types.BLOB:            return java.sql.Blob.class;
+            case Types.CLOB:            return java.sql.Clob.class;
+            default:
+                throw new DataException("Unsupported SQL type!");
+        }
+    }
+    
+    /**
+     * Tool to convert java class to SQL type
+     * @param cls java class
+     * @return SQL type
+     * @throws DataException 
+     */
+    public static int ClassToSQLTypes(Class<?> cls) throws DataException {
+        if(cls.equals(boolean.class))       return Types.BOOLEAN;
+        else if(cls.equals(short.class))    return Types.SMALLINT;
+        else if(cls.equals(int.class))      return Types.INTEGER;
+        else if(cls.equals(long.class))     return Types.BIGINT;
+        else if(cls.equals(float.class))    return Types.REAL;
+        else if(cls.equals(double.class))   return Types.DOUBLE;
+        else if(cls.equals(BigDecimal.class))   return Types.DECIMAL;
+        else if(cls.equals(String.class))   return Types.VARCHAR;
+        else if(cls.equals(java.sql.Date.class) ||
+                cls.equals(java.util.Date.class)) return Types.DATE;
+        else if(cls.equals(java.sql.Time.class)) return Types.TIME;
+        else if(cls.equals(java.sql.Timestamp.class)) return Types.TIMESTAMP;
+        else if(cls.equals(java.sql.Blob.class)) return Types.BLOB;
+        else if(cls.equals(java.sql.Clob.class)) return Types.CLOB;
+        else throw new DataException("Unsupported class for SQL type!");
+    }
+    
+    /**
+     * Convert a object to specific SQL type
+     * @param val
+     * @param tgtSqlType
+     * @return 
+     */
+    public static Object ConvertSQLValue(Object val, int tgtSqlType) {
+        if(val == null) 
+            return null;
+        
+        return val;
+    }
     
     /**
      * Construct a emtpy column
@@ -151,23 +218,7 @@ public class DataColumn {
      * @return 
      */
     protected Class<?> getTypeClass() throws DataException {
-        switch(_type) {
-            case Types.BIGINT:      return long.class;
-            case Types.BOOLEAN:     return boolean.class;
-            case Types.CHAR:        return String.class;
-            case Types.DATE:        return Date.class;
-            case Types.DECIMAL:     return BigDecimal.class;
-            case Types.DOUBLE:      return double.class;
-            case Types.INTEGER:     return Integer.class;
-            case Types.REAL:        return double.class;
-            case Types.SMALLINT:    return short.class;
-            case Types.TIME:        return Date.class;
-            case Types.TIMESTAMP:   return Date.class;
-            case Types.VARCHAR:     return String.class;
-            case Types.LONGVARCHAR: return String.class;
-            default:
-                throw new DataException("Unsupported SQL type!");
-        }
+        return SQLTypeToClass(_type);
     }
     
     /**
@@ -181,7 +232,11 @@ public class DataColumn {
         if(cls.isAssignableFrom(val.getClass())) {
             return val;
         } else {
-            return cls.cast(val);
+            Variable var = new Variable(val);
+            Object res = var.ConvertTo(cls);
+            if(res == null)
+                throw new DataException("Invalid data convertion!");
+            return res;
         }
     }
 }
