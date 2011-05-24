@@ -1,5 +1,8 @@
 package edoor.Data;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.LinkedHashMap;
 
 /**
@@ -14,7 +17,7 @@ public class DataRow {
     
     private DataTable _owner = null;
     private int _state = NEW;
-    
+
     /**
      * Inner class for cells in the row
      */
@@ -35,6 +38,10 @@ public class DataRow {
          * @param val New value
          */
         public void setValue(Object val) throws DataException {
+            if(val == null) {
+                if(!_column.isNullable())
+                    throw new DataException("Cannot set null to column that is not null able!");
+            }
             Object castedVal = _column.cast(val);
             if(_baseVal == null) {
                 // No base value. It's first time set it
@@ -73,6 +80,47 @@ public class DataRow {
         public void RejectChange() throws DataException {
             _curVal = _baseVal;
             _changed = false;
+        }
+
+        /**
+         * Read data from Result set
+         * @param rs Result set
+         * @param iCol Index of column where data read from
+         */
+        private void Read(ResultSet rs, int iCol) throws DataException {
+            if(rs == null)
+                throw new DataException("ResultSet is null!");
+                
+            try {
+                Object val = null;
+                switch(_column.getType()) {
+                    case Types.BIGINT: val = rs.getLong(iCol); break;
+                    case Types.BOOLEAN: val = rs.getBoolean(iCol); break;
+                    case Types.CHAR: val = rs.getString(iCol); break;
+                    case Types.DATE: val = rs.getDate(iCol); break;
+                    case Types.DECIMAL: val = rs.getBigDecimal(iCol); break;
+                    case Types.DOUBLE: val = rs.getDouble(iCol); break;
+                    case Types.FLOAT: val = rs.getFloat(iCol); break;
+                    case Types.INTEGER: val = rs.getInt(iCol); break;
+                    case Types.LONGNVARCHAR: val = rs.getString(iCol); break;
+                    case Types.LONGVARCHAR: val = rs.getString(iCol); break;
+                    case Types.NCHAR: val = rs.getNString(iCol); break;
+                    case Types.NUMERIC: val = rs.getInt(iCol); break;
+                    case Types.NVARCHAR: val = rs.getNString(iCol); break;
+                    case Types.REAL: val = rs.getDouble(iCol); break;
+                    case Types.ROWID: val = rs.getRowId(iCol); break;
+                    case Types.SMALLINT: val = rs.getShort(iCol); break;
+                    case Types.TIME: val = rs.getTime(iCol); break;
+                    case Types.TIMESTAMP: val = rs.getTimestamp(iCol); break;
+                    case Types.TINYINT: val = rs.getByte(iCol); break;
+                    case Types.VARCHAR: val = rs.getString(iCol); break;
+                }
+                setValue(val);
+            } catch (SQLException ex) {
+                DataException err = new DataException("Read data from ResultSet failed!");
+                err.initCause(ex);
+                throw err;
+            }
         }
     }
     
@@ -186,4 +234,30 @@ public class DataRow {
     public boolean isDeleted() {
         return (_state & DELETED) == 0 ? false : true;
     }
+
+    /**
+     * Read data from current cusor of ResultSet
+     * @param rs ResultSet
+     */
+    void Read(ResultSet rs) throws DataException {
+        try {
+            if(rs == null)
+                throw new DataException("ResultSet is null!");
+            if(rs.isClosed())
+                throw new DataException("ResultSet already closed!");
+            
+            for(String colName : _cells.keySet()) {
+                int iCol = -1;
+                try { iCol = rs.findColumn(colName); } catch (Throwable err) { continue; }
+                DataCell cell = _cells.get(colName);
+                cell.Read(rs, iCol);
+            }
+        } catch (SQLException ex) {
+            DataException err = new DataException("Read row from ResultSet failed!");
+            err.initCause(ex);
+            throw err;
+        }
+        
+    }
+    
 }

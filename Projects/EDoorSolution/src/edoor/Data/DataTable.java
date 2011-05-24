@@ -108,7 +108,7 @@ public class DataTable {
                 col.setNullable(metaData.isNullable(i) == metaData.columnNoNulls ? false : true);
             }
             // Load data
-            
+            table.Read(result);
             return table;
         } catch (SQLException ex) {
             DataException err = new DataException("Create DataTable from ResultSet failed!");
@@ -206,6 +206,14 @@ public class DataTable {
     }
     
     /**
+     * Get all rows
+     * @return 
+     */
+    public List<DataRow> getRows() {
+        return _rows;
+    }
+    
+    /**
      * Create a new row base on this table's schema. 
      * New row could only be append to the same table.
      * @return Newly created data row
@@ -223,6 +231,7 @@ public class DataTable {
      */
     public void AppendRow(DataRow row) throws DataException {
         // TODO Check PK and unique index for AppendRow
+        row.setNew(true);
         _rows.add(row);
     }
     
@@ -236,6 +245,38 @@ public class DataTable {
     }
     
     /**
+     * Accept changes made in this table
+     * @throws DataException 
+     */
+    public void AcceptChanges() throws DataException {
+        for(DataRow row : _rows) {
+            if(row.isDeleted()) {
+                // Row should be deleted
+                RemoveRow(row);
+            } else {
+                row.AcceptChanges();
+            }
+        }
+    }
+    
+    /**
+     * Reject changes made in this table
+     * @throws DataException 
+     */
+    public void RejectChanges() throws DataException {
+        for(DataRow row : _rows) {
+            if(row.isNew()) {
+                RemoveRow(row);
+            }else {
+                if(row.isDeleted()) {
+                    row.setDeleted(false);
+                }
+                row.RejectChanges();
+            }
+        }
+    }
+
+    /**
      * Read data from result set
      * @param rs
      * @throws DataException 
@@ -245,8 +286,16 @@ public class DataTable {
             throw new DataException("Result set is null!");
         
         try {
-            if(!rs.first())
+            if(!rs.next())
                 return; // no data
+
+            do {
+                DataRow newRow = NewRow();
+                newRow.Read(rs);
+                AppendRow(newRow);
+            } while(rs.next());
+            
+            AcceptChanges();
             
         } catch (SQLException ex) {
             DataException err = new DataException("Read data from result set failed!");

@@ -130,6 +130,35 @@ public class DataCenter
         return "SQL>";
     }
 
+    /**
+     * Tool to output data table to console
+     * @param table Data table
+     * @param console Console
+     */
+    public static void OutputTable(DataTable table, IConsole console) throws DataException {
+        // Output Column head
+        int iRowLen = 0;
+        for(DataColumn col : table.getColumns()) {
+            String colName = col.getName();
+            console.print("%s\t", colName);
+            iRowLen += colName.length() + 4;
+        }
+        console.print("\n");
+        // Output seperator
+        for(int i=0;i<iRowLen;i++)
+            console.print("-");
+        console.print("\n");
+        // Output rows
+        for(DataRow row : table.getRows()) {
+            for(DataColumn col : table.getColumns()) {
+                String colName = col.getName();
+                Object val = row.getField(colName);
+                console.print("%s\t", val.toString());
+            }
+            console.print("\n");
+        }
+    }
+    
     @Override
     public void doCommand(String cmd) throws CommandException {
         if(cmd.toLowerCase().startsWith("quit")) {
@@ -151,7 +180,14 @@ public class DataCenter
             }
             // Show queried data
             if(_console != null) {
-                _console.print("%d lines found:\n", 0);
+                _console.print("%d lines found:\n", result.getRows().size());
+                try {
+                    OutputTable(result, _console);
+                } catch (DataException ex) {
+                    CommandException err = new CommandException("Show queried data failed!");
+                    err.initCause(ex);
+                    throw err;
+                }
             }
         } else {
             int iResult = 0;

@@ -1,5 +1,6 @@
 package edoor.Data;
 
+import java.math.*;
 import java.util.Date;
 import org.apache.derby.client.am.Types;
 
@@ -155,9 +156,9 @@ public class DataColumn {
             case Types.BOOLEAN:     return boolean.class;
             case Types.CHAR:        return String.class;
             case Types.DATE:        return Date.class;
-            case Types.DECIMAL:     return double.class;
+            case Types.DECIMAL:     return BigDecimal.class;
             case Types.DOUBLE:      return double.class;
-            case Types.INTEGER:     return int.class;
+            case Types.INTEGER:     return Integer.class;
             case Types.REAL:        return double.class;
             case Types.SMALLINT:    return short.class;
             case Types.TIME:        return Date.class;
@@ -175,7 +176,12 @@ public class DataColumn {
      * @return 
      */
     public Object cast(Object val) throws DataException {
-       Class<?> cls = getTypeClass();
-       return cls.cast(val);
+        if(val == null) return null;
+        Class<?> cls = getTypeClass();
+        if(cls.isAssignableFrom(val.getClass())) {
+            return val;
+        } else {
+            return cls.cast(val);
+        }
     }
 }
