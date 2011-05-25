@@ -30,4 +30,16 @@ public class CmdTarget implements ICommandBase {
     public void setCommandCenter(ICommandCenter center) {
         _cmdCenter = center;
     }
+    
+    /**
+     * Tool to write information to console
+     * @param fmt Format string
+     * @param args Arguments used to format string
+     */
+    protected void writeConsole(String fmt, Object... args) {
+        if(_console == null)
+            return;
+        
+        _console.print(fmt, args);
+    }
 }

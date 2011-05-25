@@ -50,12 +50,12 @@ public class DirectoryExplorer extends CmdTarget
      */
     @CommandEntry( Token="ShowLeafDirs", Syntax="ShowLeafDirs [root path]")
     public void ShowLeafDirs(String root) {
-            _console.print("List leaf directories for %s\n", root);
+            writeConsole("List leaf directories for %s\n", root);
             LinkedList<String> lst = new LinkedList<String>();
             int cnt = DirectoryExplorer.ListLeafFolders(root, lst);
-            _console.print("Total %d leaf directories.\n", cnt);
+            writeConsole("Total %d leaf directories.\n", cnt);
             for(String path : lst) {
-                    _console.print("%s\n", path);
+                writeConsole("%s\n", path);
             }
     }
         

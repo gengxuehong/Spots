@@ -50,6 +50,13 @@ public interface IDataConnection {
     DataTable query(String sql, Object... args) throws DataException;
 
     /**
+     * Get schema for accessing data structure of source DB
+     * @return IDataSourceSchema interface
+     * @throws DataException 
+     */
+    IDataSourceSchema getSchema() throws DataException;
+    
+    /**
      * Create a adapter for specific data table
      * @param tableName name of table
      * @return Adapter for data table

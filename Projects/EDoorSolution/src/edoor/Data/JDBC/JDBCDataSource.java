@@ -36,22 +36,4 @@ public class JDBCDataSource
         JDBCConnection jConn = new JDBCConnection(conn);
         return jConn;
     }
-
-    @Override
-    public IDataSourceSchema createSchema(String dbName) throws DataException {
-            // TODO Auto-generated method stub
-            return null;
-    }
-
-    @Override
-    public IDataSourceSchema openSchema(String dbName) throws DataException {
-            // TODO Auto-generated method stub
-            return null;
-    }
-
-    @Override
-    public void deleteSchema(String dbName) throws DataException {
-            // TODO Auto-generated method stub
-
-    }
 }

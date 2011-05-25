@@ -155,6 +155,16 @@ public class JDBCConnection
         }
     }
 
+    /**
+     * Get schema for accessing data structure of source DB
+     * @return IDataSourceSchema interface
+     * @throws DataException 
+     */
+    @Override
+    public IDataSourceSchema getSchema() throws DataException {
+        return (IDataSourceSchema)this;
+    }
+    
     @Override
     public IDataAdapter createTableAdapter(String tableName) throws DataException {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -162,7 +172,16 @@ public class JDBCConnection
 
     @Override
     public boolean isTableExists(String tableName) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        try {
+            DatabaseMetaData metaData = _connection.getMetaData();
+            ResultSet tables = metaData.getTables("", "", tableName, new String[]{"TABLE"});
+            if(tables.next())
+                return true;
+            else
+                return false;
+        } catch (SQLException ex) {
+            return false;
+        }
     }
 
     @Override
@@ -172,7 +191,9 @@ public class JDBCConnection
 
     @Override
     public void createTable(DataTable tableSchema) throws DataException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        SQLBuilder b = new SQLBuilder(new DerbySqlFormater());
+        String strSQL = b.SqlForCreateTable(tableSchema);
+        execute(strSQL);
     }
 
     @Override

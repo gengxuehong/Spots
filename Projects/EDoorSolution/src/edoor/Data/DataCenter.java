@@ -56,10 +56,7 @@ public class DataCenter
     @CommandEntry( Token = "DBLoadDriver", Syntax = "DBLoadDriver [class name of driver]")
     public void LoadJDBCDriver(String clsDriver) throws ClassNotFoundException {
         Class<?> cls = Class.forName(clsDriver);
-        if(_console != null) {
-            String msg = String.format("Driver loaded from %s\n", cls.getProtectionDomain().getCodeSource().getLocation().toString());
-            _console.print(msg);
-        }
+        writeConsole("Driver loaded from %s\n", cls.getProtectionDomain().getCodeSource().getLocation().toString());
     }
     
     /**
@@ -78,9 +75,7 @@ public class DataCenter
         
         _connection = _source.connect(connection, user, password);
         
-        if(_console != null) {
-            _console.print("Connected.\n");
-        }
+        writeConsole("Connected.\n");
     }
     
     /**
@@ -91,9 +86,7 @@ public class DataCenter
         if(_connection == null) return; // already disconnected
         _connection.close();
         _connection = null;
-        if(_console != null) {
-            _console.print("Disconnected.\n");
-        }
+        writeConsole("Disconnected.\n");
     }
     
     /**
@@ -120,11 +113,33 @@ public class DataCenter
         DataTable tb = DataTable.fromClass(cls);
         StringBuilder out = new StringBuilder();
         tb.Describe(out);
-        if(_console != null) {
-            _console.print("Table structure of class %s is:\n%s", clsName, out.toString());
-        }
+        writeConsole("Table structure of class %s is:\n%s", clsName, out.toString());
     }
 
+    /**
+     * Generate data base schema for class
+     * @param clsName Class name for schema generation
+     * @throws ClassNotFoundException
+     * @throws DataException 
+     */
+    @CommandEntry( Token="DBCreateTable", Syntax="DBCreateTable [class name]")
+    public void GenerateSchemaForClass(String clsName) 
+            throws ClassNotFoundException, DataException {
+        Class<?> cls = Class.forName(clsName);
+        DataTable tb = DataTable.fromClass(cls);
+        IDataSourceSchema schema = _connection.getSchema();
+        if(!schema.isTableExists(tb.getName())) {
+            // Create new table
+            writeConsole("Table not exist.\n");
+            schema.createTable(tb);
+        } else {
+            // Check and update table structure
+            writeConsole("Table already exist.\n");
+            schema.updateTable(tb);
+        }
+        writeConsole("Table \"%s\" was generated for class %s\n", tb.getName(), clsName);
+    }
+    
     @Override
     public String getPrompt() {
         return "SQL>";
@@ -199,17 +214,10 @@ public class DataCenter
                 err.initCause(ex);
                 throw err;
             }
-            if(_console != null) {
-                _console.print("%d lines affected.", iResult);
-            }
+            writeConsole("%d lines affected.\n", iResult);
         }
     }
 
-    @Override
-    public void showHelp(String cmd, IConsole console) {
-        console.print("Please write SQL statement in one line and press 'Enter' to execute it.\n");
-    }
-    
     @Override
     public void installHook(ICommandCenter hook) {
         throw new UnsupportedOperationException("Not supported yet.");

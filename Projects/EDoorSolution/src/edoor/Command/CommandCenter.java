@@ -24,11 +24,6 @@ public class CommandCenter
     public CommandCenter() {
     }
 
-    @Override
-    public void setConsole(IConsole console) {
-        _console = console;
-    }
-    
     /**
      * Return prompt string that displayed at each command line
      * @return 
@@ -42,15 +37,14 @@ public class CommandCenter
     }
     
     /**
-     * Show help to console
-     * @param cmd Command to be helped.
-     * @param console Console the help text outputted to.
+     * Output help text of command center to console
+     * @param cmd Name of command whose help text will be outputed; Empty if list all commands.
      */
-    @Override
-    public void showHelp(String cmd, IConsole console) {
+    @CommandEntry(Token = "help", Syntax = "help | help %command%")
+    public void Help(String cmd) {
         if(cmd == null || cmd.isEmpty()) {
             // List all available commands
-            console.print("Total %d commands. Type \"help [cmdName]\" for more help on command.\n", _Commands.isEmpty() ? 0 : _Commands.size());
+            writeConsole("Total %d commands. Type \"help [cmdName]\" for more help on command.\n", _Commands.isEmpty() ? 0 : _Commands.size());
             Enumeration<String> keys = _Commands.keys();
             LinkedList<String> lst = new LinkedList<String>();
             while(keys.hasMoreElements()) {
@@ -60,29 +54,20 @@ public class CommandCenter
             String[] ary = lst.toArray(new String[0]);
             Arrays.sort(ary);
             for(String key : ary) {
-                console.print("%s\n", key);
+                writeConsole("%s\n", key);
             }
         } else {
             // List syntax help for specific command
             if(_Commands.containsKey(cmd)) {
                 ICommand cmdObj = _Commands.get(cmd);
                 try {
-                    console.print("%s\n", cmdObj.getHelp());
+                    writeConsole("%s\n", cmdObj.getHelp());
                 } catch (CommandException ex) {
                     //Logger.getLogger(CommandCenter.class.getName()).log(Level.SEVERE, null, ex);
-                    console.print("Cannot get help! Cause:\n%s", ex.getMessage());
+                    writeConsole("Cannot get help! Cause:\n%s", ex.getMessage());
                 }
             }
         }
-    }
-    
-    /**
-     * Output help text of command center to console
-     * @param cmd Name of command whose help text will be outputed; Empty if list all commands.
-     */
-    @CommandEntry(Token = "help", Syntax = "help | help %command%")
-    public void Help(String cmd) {
-        showHelp(cmd, _console);
     }
     
     /**

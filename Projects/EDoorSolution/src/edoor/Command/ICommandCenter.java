@@ -20,14 +20,7 @@ public interface ICommandCenter {
      * @param cmd 
      */
     public void doCommand(String cmd) throws CommandException;
-    
-    /**
-     * Show help to console
-     * @param cmd Command to be helped.
-     * @param console Console the help text outputted to.
-     */
-    public void showHelp(String cmd, IConsole console);
-    
+        
     /**
      * Install a command hook to this command center.
      * A hook is another command center which take over all command inputs.
